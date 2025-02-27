@@ -45,13 +45,14 @@ pipeline {
                     sh 'ls -la'
 
                     echo 'Changing directory to app...'
-                    sh 'cd app && ls -la'
+                    sh 'cd my-k8s-app/app && ls -la'
 
                     echo 'Building Docker Image...'
-                    sh 'cd app && docker build -t my-k8s-app:latest .'
+                    sh 'cd my-k8s-app/app && docker build -t my-k8s-app:latest .'
                 }
             }
         }
+
 
 
 
