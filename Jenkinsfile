@@ -37,11 +37,13 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                eval $(minikube docker-env)
-                cd app
-                docker build -t my-k8s-app:latest .
-                '''
+                script {
+                    sh '''
+                    eval $(minikube docker-env)
+                    cd app
+                    docker build -t my-k8s-app:latest .
+                    '''
+                }
             }
         }
 
