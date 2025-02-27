@@ -39,7 +39,10 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "Setting up Minikube Docker Environment..."
                     eval $(minikube docker-env)
+
+                    echo "Building Docker Image..."
                     cd app
                     docker build -t my-k8s-app:latest .
                     '''
