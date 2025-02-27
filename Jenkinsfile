@@ -38,20 +38,21 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh '''
-                    echo "Checking if Minikube is Running..."
-                    minikube status || minikube start --driver=docker
+                    echo 'Checking current working directory...'
+                    sh 'pwd'
 
-                    echo "Setting up Minikube Docker Environment..."
-                    eval $(minikube docker-env) || { echo "Minikube Docker Environment setup failed"; exit 1; }
+                    echo 'Listing files before changing directory...'
+                    sh 'ls -la'
 
-                    echo "Building Docker Image..."
-                    cd app
-                    docker build -t my-k8s-app:latest .
-                    '''
+                    echo 'Changing directory to app...'
+                    sh 'cd app && ls -la'
+
+                    echo 'Building Docker Image...'
+                    sh 'cd app && docker build -t my-k8s-app:latest .'
                 }
             }
         }
+
 
 
         stage('Deploy to Kubernetes') {
