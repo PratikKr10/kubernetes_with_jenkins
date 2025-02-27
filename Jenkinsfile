@@ -6,7 +6,7 @@ pipeline {
         WORKDIR = "${WORKSPACE}/my-k8s-app"
         VENV_PATH = "${WORKSPACE}/venv"
         DOCKER_IMAGE = "my-k8s-app:latest"
-        K8S_NAMESPACE = "k8s-demo"
+        K8S_NAMESPACE = "demo-namespace"
     }
 
     stages {
