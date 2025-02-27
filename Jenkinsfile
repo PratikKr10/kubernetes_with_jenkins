@@ -39,8 +39,7 @@ pipeline {
             steps {
                 sh '''
                 eval $(minikube docker-env)
-                cd "$WORKDIR/app"
-                docker build -t $DOCKER_IMAGE .
+                docker build -t my-k8s-app:latest -f app/Dockerfile .
                 '''
             }
         }
