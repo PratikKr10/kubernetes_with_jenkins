@@ -39,8 +39,11 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "Checking if Minikube is Running..."
+                    minikube status || minikube start --driver=docker
+
                     echo "Setting up Minikube Docker Environment..."
-                    eval $(minikube docker-env)
+                    eval $(minikube docker-env) || { echo "Minikube Docker Environment setup failed"; exit 1; }
 
                     echo "Building Docker Image..."
                     cd app
@@ -49,6 +52,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Deploy to Kubernetes') {
             steps {
