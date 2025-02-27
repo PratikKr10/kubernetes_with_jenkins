@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = "git@github.com:PratikKr10/my-k8s-app.git"
+        REPO_URL = "git@github.com:PratikKr10/kubernetes_with_jenkins.git"
         WORKDIR = "${WORKSPACE}/my-k8s-app"
         VENV_PATH = "${WORKSPACE}/venv"
         DOCKER_IMAGE = "my-k8s-app:latest"
