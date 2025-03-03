@@ -2,80 +2,90 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = "git@github.com:PratikKr10/kubernetes_with_jenkins.git"
-        WORKDIR = "${WORKSPACE}/my-k8s-app"
-        VENV_PATH = "${WORKSPACE}/venv"
-        DOCKER_IMAGE = "my-k8s-app:latest"
-        K8S_NAMESPACE = "demo-namespace"
+        KUBECONFIG = "/home/pratik/.kube/config"
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Start Minikube') {
             steps {
-                cleanWs()
-                sh '''
-                    echo "Cloning repository..."
-                    if [ -d "$WORKDIR" ]; then
-                        rm -rf "$WORKDIR"
-                    fi
-                    git clone $REPO_URL "$WORKDIR"
-                    echo "Repository cloned successfully!"
-                    ls -la "$WORKDIR"
-                '''
-            }
-        }
-
-        stage('Setup Python Environment') {
-            steps {
-                sh '''
-                python3 -m venv "$VENV_PATH"
-                . "$VENV_PATH/bin/activate"
-                pip install --upgrade pip build pytest
-                '''
+                script {
+                    echo "🚀 Ensuring Minikube is running..."
+                    def status = sh(script: "minikube status | grep 'host: Running' || echo 'not running'", returnStdout: true).trim()
+                    if (status == "not running") {
+                        sh 'minikube stop || true'
+                        sh 'minikube delete || true'
+                        sh 'minikube start --driver=docker'
+                    }
+                    sh 'eval $(minikube docker-env)' // Use Minikube's Docker daemon
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo 'Checking current working directory...'
-                    sh 'pwd'
-
-                    echo 'Listing files before changing directory...'
-                    sh 'ls -la'
-
-                    echo 'Changing directory to app...'
-                    sh 'cd my-k8s-app/app && ls -la'
-
-                    echo 'Building Docker Image...'
-                    sh 'cd my-k8s-app/app && docker build -t my-k8s-app:latest .'
+                    echo "🐳 Building Docker Image..."
+                    sh '''
+                        eval $(minikube docker-env)
+                        cd app
+                        docker build -t my-k8s-app:latest .
+                        cd ..
+                    '''
                 }
             }
         }
 
-
-
+        stage('Load Image into Minikube') {
+            steps {
+                script {
+                    echo "📦 Loading Docker Image into Minikube..."
+                    sh '''
+                        eval $(minikube docker-env)
+                        minikube image load my-k8s-app:latest
+                    '''
+                }
+            }
+        }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                kubectl apply -f "$WORKDIR/k8s/namespace.yaml"
-                kubectl apply -f "$WORKDIR/k8s/configmap.yaml"
-                kubectl apply -f "$WORKDIR/k8s/deployment.yaml"
-                kubectl apply -f "$WORKDIR/k8s/service.yaml"
-                kubectl -n $K8S_NAMESPACE rollout status deployment/flask-app
-                '''
+                script {
+                    echo "🛠 Applying Kubernetes resources..."
+                    sh '''
+                        kubectl apply -f k8s/namespace.yaml
+                        kubectl apply -f k8s/configmap.yaml
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                    '''
+                }
+            }
+        }
+
+        stage('Wait for Deployment') {
+            steps {
+                script {
+                    echo "⏳ Waiting for pods to be ready..."
+                    sh 'kubectl -n demo-namespace rollout status deployment/flask-app'
+                }
+            }
+        }
+
+        stage('Get Service URL') {
+            steps {
+                script {
+                    echo "🔗 Retrieving service URL..."
+                    sh 'minikube service flask-service -n demo-namespace --url'
+                }
             }
         }
     }
 
     post {
         success {
-            echo '✅ Deployment successful!'
+            echo "✅ Deployment successful!"
         }
         failure {
-            echo '❌ Pipeline failed. Check logs.'
+            echo "❌ Deployment failed! Check logs."
         }
     }
 }
-
